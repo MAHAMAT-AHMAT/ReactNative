@@ -1,13 +1,13 @@
-// App.js
 import React from "react";
-import { SafeAreaView } from "react-native";
-import Posts from "./components/Posts"; //chemin de mon components
+import { Provider } from "react-redux";
+import store from "./components/store"; // Assurez-vous que le chemin est correct
+import Posts from "./components/Posts";
 
 const App = () => {
   return (
-    <SafeAreaView>
+    <Provider store={store}>
       <Posts />
-    </SafeAreaView>
+    </Provider>
   );
 };
 

@@ -1,67 +1,137 @@
-// Posts.js
 import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   FlatList,
-  ActivityIndicator,
+  Button,
+  TextInput,
   StyleSheet,
 } from "react-native";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
 
 const Posts = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const posts = useSelector((state) => state.posts.posts);
+  const [newPost, setNewPost] = useState("");
+  const [editPost, setEditPost] = useState({ id: null, title: "" });
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get(
-          "https://jsonplaceholder.typicode.com/posts"
-        );
-        setPosts(response.data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPosts();
   }, []);
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
+  const fetchPosts = async () => {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
+    dispatch({ type: "SET_POSTS", payload: data });
+  };
 
-  if (error) {
-    return <Text>Error: {error.message}</Text>;
-  }
+  const addPost = () => {
+    const post = { id: Math.random(), title: newPost };
+    dispatch({ type: "ADD_POST", payload: post });
+    setNewPost("");
+  };
+
+  const deletePost = (id) => {
+    dispatch({ type: "DELETE_POST", payload: id });
+  };
+
+  const startEditPost = (post) => {
+    setEditPost({ id: post.id, title: post.title });
+  };
+
+  const editExistingPost = () => {
+    dispatch({
+      type: "EDIT_POST",
+      payload: { id: editPost.id, updatedPost: { title: editPost.title } },
+    });
+    setEditPost({ id: null, title: "" });
+  };
 
   return (
-    <FlatList
-      data={posts}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <View style={styles.item}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text>{item.body}</Text>
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Add a new post"
+        value={newPost}
+        onChangeText={setNewPost}
+      />
+      <Button title="Add Post" onPress={addPost} />
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.post}>
+            <Text style={styles.title}>{item.title}</Text>
+            <View style={styles.buttonsContainer}>
+              <Button title="Delete" onPress={() => deletePost(item.id)} />
+              <View style={styles.space} />
+              <Button title="Edit" onPress={() => startEditPost(item)} />
+            </View>
+          </View>
+        )}
+      />
+      {editPost.id && (
+        <View style={styles.editContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Edit post"
+            value={editPost.title}
+            onChangeText={(text) => setEditPost({ ...editPost, title: text })}
+          />
+          <Button title="Save" onPress={editExistingPost} />
         </View>
       )}
-    />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  item: {
-    padding: 5,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#f8f9fa",
+  },
+  input: {
+    height: 40,
+    borderColor: "gray",
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingLeft: 10,
+    borderRadius: 5,
+  },
+  post: {
+    padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+    marginBottom: 10,
+    backgroundColor: "#fff",
+    borderRadius: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2.5,
+    elevation: 3,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
-    top: 5,
+    fontSize: 16,
     fontWeight: "bold",
+    flex: 1,
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  space: {
+    width: 10, // Espace de 10 pixels entre les boutons
+  },
+  editContainer: {
+    marginTop: 10,
   },
 });
 
